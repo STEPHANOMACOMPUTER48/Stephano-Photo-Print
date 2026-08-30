@@ -15,7 +15,7 @@ class PhotoPrinterApp:
         header = tk.Label(root, text="Programu ya Kuprint Picha", font=("Arial", 16, "bold"), fg="#2c3e50")
         header.pack(pady=15)
         
-        self.btn_browse = tk.Button(root, text="Chagua Picha", command=self.load_image, font=("Arial", 11), bg="#3498db", fg="white", px=10, py=5)
+        self.btn_browse = tk.Button(root, text="Chagua Picha", command=self.load_image, font=("Arial", 11), bg="#3498db", fg="white", padx=10, pady=5)
         self.btn_browse.pack(pady=5)
         
         self.lbl_file = tk.Label(root, text="Hujachagua picha yoyote", font=("Arial", 9, "italic"), fg="#7f8c8d")
@@ -36,7 +36,7 @@ class PhotoPrinterApp:
             rb = tk.Radiobutton(root, text=text, variable=self.size_option, value=mode, font=("Arial", 10))
             rb.pack(anchor="w", padx=60, pady=2)
             
-        self.btn_print = tk.Button(root, text="Tengeneza Ukurasa wa Ku-print (PDF)", command=self.generate_print_layout, font=("Arial", 11, "bold"), bg="#2ecc71", fg="white", px=10, py=8)
+        self.btn_print = tk.Button(root, text="Tengeneza Ukurasa wa Ku-print (PDF)", command=self.generate_print_layout, font=("Arial", 11, "bold"), bg="#2ecc71", fg="white", padx=10, pady=8)
         self.btn_print.pack(pady=25)
 
     def load_image(self):
