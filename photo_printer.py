@@ -49,49 +49,66 @@ class PhotoPrinterApp:
             self.image_path = file_path
             filename = os.path.basename(file_path)
             self.lbl_file.config(text=f"Picha iliyochaguliwa: {filename}", fg="#27ae60")
-            self.open_crop_window()
+            self.open_manual_crop_window()
 
-    def open_crop_window(self):
-        # Kioo cha Kurekebisha Picha (Crop & Resize)
+    def open_manual_crop_window(self):
         crop_win = tk.Toplevel(self.root)
-        crop_win.title("Rekebisha Picha (Crop & Resize)")
-        crop_win.geometry("400x450")
+        crop_win.title("Kata Picha Wewe Mwenyewe (Manual Crop)")
+        crop_win.geometry("450x550")
         
-        lbl_info = tk.Label(crop_win, text="Hakikisha Sura ipo Katikati", font=("Arial", 10, "bold"))
+        lbl_info = tk.Label(crop_win, text="Buruza (Drag) Mouse kwenye picha ili uchague eneo:", font=("Arial", 9, "bold"))
         lbl_info.pack(pady=5)
 
-        img = Image.open(self.image_path)
-        img.thumbnail((300, 300))
-        img_tk = ImageTk.PhotoImage(img)
+        raw_img = Image.open(self.image_path)
+        
+        # Scaling image for display canvas
+        disp_w, disp_h = 400, 400
+        img_copy = raw_img.copy()
+        img_copy.thumbnail((disp_w, disp_h))
+        
+        scale_x = raw_img.width / img_copy.width
+        scale_y = raw_img.height / img_copy.height
+        
+        img_tk = ImageTk.PhotoImage(img_copy)
+        
+        canvas = tk.Canvas(crop_win, width=img_copy.width, height=img_copy.height, cursor="cross")
+        canvas.pack(pady=5)
+        canvas.create_image(0, 0, anchor="nw", image=img_tk)
+        canvas.image = img_tk
+        
+        rect = [None]
+        start_pos = [0, 0]
 
-        lbl_img = tk.Label(crop_win, image=img_tk)
-        lbl_img.image = img_tk
-        lbl_img.pack(pady=10)
+        def on_press(event):
+            start_pos[0], start_pos[1] = event.x, event.y
+            if rect[0]:
+                canvas.delete(rect[0])
+            rect[0] = canvas.create_rectangle(event.x, event.y, event.x, event.y, outline="red", width=2)
 
-        def confirm_crop():
-            # Inachukua picha na kuisawazisha moja kwa moja kwa uwiano sahihi (Auto-Center Crop)
-            raw_img = Image.open(self.image_path)
-            w, h = raw_img.size
-            
-            # Weka uwiano wa Passport (3.5x4.5)
-            target_ratio = 3.5 / 4.5
-            current_ratio = w / h
-            
-            if current_ratio > target_ratio:
-                # Picha ni pana sana, kata pembeni
-                new_w = int(h * target_ratio)
-                offset = (w - new_w) // 2
-                self.cropped_img = raw_img.crop((offset, 0, offset + new_w, h))
+        def on_drag(event):
+            canvas.coords(rect[0], start_pos[0], start_pos[1], event.x, event.y)
+
+        def confirm_manual_crop():
+            coords = canvas.coords(rect[0])
+            if not coords or abs(coords[2] - coords[0]) < 10 or abs(coords[3] - coords[1]) < 10:
+                # Kama hakuchagua, tumia picha yote
+                self.cropped_img = raw_img
             else:
-                # Picha ni ndefu sana, kata juu na chini
-                new_h = int(w / target_ratio)
-                offset = (h - new_h) // 2
-                self.cropped_img = raw_img.crop((0, offset, w, offset + new_h))
+                x1, y1, x2, y2 = coords
+                # Hakikisha vipimo ni sahihi kuanzia kushoto kwenda kulia
+                rx1 = int(min(x1, x2) * scale_x)
+                ry1 = int(min(y1, y2) * scale_y)
+                rx2 = int(max(x1, x2) * scale_x)
+                ry2 = int(max(y1, y2) * scale_y)
+                self.cropped_img = raw_img.crop((rx1, ry1, rx2, ry2))
                 
             crop_win.destroy()
-            messagebox.showinfo("Imerekebishwa", "Picha imerekebishwa kikamilifu tayari kwa ku-print!")
+            messagebox.showinfo("Imerekebishwa", "Picha imekatwa vizuri kama ulivyochagua!")
 
-        btn_ok = tk.Button(crop_win, text="Sawa, Tumia Picha Hii", command=confirm_crop, bg="#3498db", fg="white", font=("Arial", 10, "bold"), padx=10, pady=5)
+        canvas.bind("<ButtonPress-1>", on_press)
+        canvas.bind("<B1-Motion>", on_drag)
+
+        btn_ok = tk.Button(crop_win, text="Kamilisha na Tumia Picha Hii", command=confirm_manual_crop, bg="#2ecc71", fg="white", font=("Arial", 10, "bold"), padx=10, pady=5)
         btn_ok.pack(pady=10)
 
     def generate_print_layout(self):
